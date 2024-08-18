@@ -645,6 +645,76 @@
         <script src="assets/js/vendor/jquery-one-page-nav.js"></script>
         <!-- main JS -->
         <script src="assets/js/main.js"></script>
+        <div id="label-container"></div>
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@tensorflow-models/speech-commands@0.4.0/dist/speech-commands.min.js"></script>
+
+        <script type="text/javascript">
+            // the link to your model provided by Teachable Machine export panel
+            const URL = "https://teachablemachine.withgoogle.com/models/ghtnAxGX5/";
+
+            async function createModel() {
+                const checkpointURL = URL + "model.json"; // model topology
+                const metadataURL = URL + "metadata.json"; // model metadata
+
+                const recognizer = speechCommands.create(
+                    "BROWSER_FFT", // fourier transform type, not useful to change
+                    undefined, // speech commands vocabulary feature, not useful for your models
+                    checkpointURL,
+                    metadataURL
+                );
+
+                // check that model and metadata are loaded via HTTPS requests.
+                await recognizer.ensureModelLoaded();
+
+                return recognizer;
+            }
+
+            async function init() {
+                const recognizer = await createModel();
+                const classLabels = recognizer.wordLabels(); // get class labels
+                const labelContainer = document.getElementById("label-container");
+                for (let i = 0; i < classLabels.length; i++) {
+                    labelContainer.appendChild(document.createElement("div"));
+                }
+
+                recognizer.listen(result => {
+                    const scores = result.scores; // probability of prediction for each class
+                    for (let i = 0; i < classLabels.length; i++) {
+                        const classPrediction = classLabels[i] + ": " + result.scores[i].toFixed(2);
+                        labelContainer.childNodes[i].innerHTML = classPrediction;
+
+                        // Log the scores to the console
+                        console.log(classPrediction);
+
+
+
+                        // Navigate to the section if the score is above 0.8
+                        if (result.scores[i] > 0.8) {
+                            if (classLabels[i] === "home") {
+                                document.getElementById("home").scrollIntoView({ behavior: 'smooth' });
+                            } else if (classLabels[i] === "project") {
+                                document.getElementById("portfolio").scrollIntoView({ behavior: 'smooth' });
+                            } else if (classLabels[i] === "skill") {
+                                document.getElementById("features").scrollIntoView({ behavior: 'smooth' });
+                            } else if (classLabels[i] === "contact") {
+                                document.getElementById("contacts").scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }
+                    }
+                }, {
+                    includeSpectrogram: true,
+                    probabilityThreshold: 0.75,
+                    invokeCallbackOnNoiseAndUnknown: true,
+                    overlapFactor: 0.50
+                });
+            }
+
+            // Automatically start when the window loads
+            window.onload = init;
+        </script>
+
 </body>
 
 
